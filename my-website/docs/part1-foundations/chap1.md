@@ -10,7 +10,7 @@ By the end of this chapter, you will be able to:
 ## Theoretical Foundation
 Physical AI, also known as embodied AI, refers to artificial intelligence systems that interact with the physical world through sensors and actuators. Unlike purely software-based AI, Physical AI operates within a body, experiencing the world directly. Humanoid robotics is a specialized subset of Physical AI focused on creating robots that resemble the human body in form and often in function.
 
-The journey towards Physical AI began with early cybernetics and control theory in the mid-20th century. Key milestones include the development of early industrial robots (e.g., Unimate), the rise of mobile robotics (e.g., Shakey the Robot), and advancements in legged locomotion (e.g., Honda ASIMO, Boston Dynamics robots). Modern Physical AI integrates advances in machine learning, computer vision, and advanced control systems to enable robots to perceive, reason, and act in complex environments.
+The journey towards Physical AI began with early cybernetics and control theory in the mid-20th century. Key milestones include the development of early industrial robots (e.g., Unimate), the rise of mobile robotics (e.g., Shakey the Robot), and advancements in legged locomotion (e.g., Honda ASIMO, Boston Dynamics robots). Modern Physical AI integrates advances in machine learning, computer vision, and advanced control systems to enable robots to perceive, reason and act in complex environments.
 
 Core concepts include:
 - **Embodiment**: The physical form of the AI system.
