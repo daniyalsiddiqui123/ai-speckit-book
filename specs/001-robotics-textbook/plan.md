@@ -9,10 +9,10 @@ The project is to create a comprehensive, web-based textbook for a "Physical AI 
 
 ## Technical Context
 
-**Language/Version**: TypeScript (for Docusaurus), Python 3.9+ (for code examples)
-**Primary Dependencies**: Docusaurus, React, Node.js (for tooling), PyTorch, ROS 2 (for examples)
+**Language/Version**: TypeScript (for Docusaurus)
+**Primary Dependencies**: Docusaurus, React, Node.js (for tooling)
 **Storage**: N/A (Content is stored in `.md` files in the Git repository)
-**Testing**: Jest/Vitest (with TypeScript support for custom React components), `markdown-lint`, custom Python scripts (for testing code examples)
+**Testing**: Jest/Vitest (with TypeScript support for custom React components), `markdown-lint`
 **Target Platform**: Modern web browsers (Chrome, Firefox, Safari, Edge)
 **Project Type**: Web Application (Static Content Site)
 **Performance Goals**: p99 page load time < 2 seconds.
@@ -26,8 +26,8 @@ The project is to create a comprehensive, web-based textbook for a "Physical AI 
     *   **Rationale**: This approach provides version control, enables collaboration, and allows for automated quality checks (linting, testing). Docusaurus is optimized for performance, scalability, and maintainability of documentation-style websites, aligning perfectly with the project's non-functional requirements.
 
 2.  **Code Examples: Loosely Coupled**
-    *   **Decision**: Practical code examples will be written as standalone, library-standard Python scripts. The textbook will provide separate textual guidance on how to run these scripts within a recommended simulation environment.
-    *   **Rationale**: As per the spec clarification, this makes the content more resilient to changes in simulation technology and more broadly applicable for students using different setups.
+    *   **Decision**: Practical code examples will be written as standalone, library-standard TypeScript/JavaScript functions/modules. The textbook will provide separate textual guidance on how to run these scripts within a recommended environment (e.g., Node.js or browser console).
+    *   **Rationale**: As per the spec clarification, this makes the content more resilient to changes in execution technology and more broadly applicable for students using different setups.
 
 3.  **Deployment: CI/CD Automation**
     *   **Decision**: A continuous integration/continuous deployment (CI/CD) pipeline will be set up using GitHub Actions.
