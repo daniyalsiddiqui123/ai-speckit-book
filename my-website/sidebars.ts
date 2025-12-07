@@ -23,40 +23,88 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Part 1: Foundations',
       items: [
-        'part1-foundations/chap1',
-        'part1-foundations/chap2',
-        'part1-foundations/chap3',
-        'part1-foundations/chap4',
+        {
+          type: 'doc',
+          id: 'part1-foundations/chap1',
+        },
+        {
+          type: 'doc',
+          id: 'part1-foundations/chap2',
+        },
+        {
+          type: 'doc',
+          id: 'part1-foundations/chap3',
+        },
+        {
+          type: 'doc',
+          id: 'part1-foundations/chap4',
+        },
       ],
     },
     {
       type: 'category',
       label: 'Part 2: Perception & Actuation',
       items: [
-        'part2-perception-actuation/chap5',
-        'part2-perception-actuation/chap6',
-        'part2-perception-actuation/chap7',
-        'part2-perception-actuation/chap8',
+        {
+          type: 'doc',
+          id: 'part2-perception-actuation/chap5',
+        },
+        {
+          type: 'doc',
+          id: 'part2-perception-actuation/chap6',
+        },
+        {
+          type: 'doc',
+          id: 'part2-perception-actuation/chap7',
+        },
+        {
+          type: 'doc',
+          id: 'part2-perception-actuation/chap8',
+        },
       ],
     },
     {
       type: 'category',
       label: 'Part 3: Intelligence & Learning',
       items: [
-        'part3-intelligence-learning/chap9',
-        'part3-intelligence-learning/chap10',
-        'part3-intelligence-learning/chap11',
-        'part3-intelligence-learning/chap12',
+        {
+          type: 'doc',
+          id: 'part3-intelligence-learning/chap9',
+        },
+        {
+          type: 'doc',
+          id: 'part3-intelligence-learning/chap10',
+        },
+        {
+          type: 'doc',
+          id: 'part3-intelligence-learning/chap11',
+        },
+        {
+          type: 'doc',
+          id: 'part3-intelligence-learning/chap12',
+        },
       ],
     },
     {
       type: 'category',
       label: 'Part 4: Advanced Topics',
       items: [
-        'part4-advanced-topics/chap13',
-        'part4-advanced-topics/chap14',
-        'part4-advanced-topics/chap15',
-        'part4-advanced-topics/chap16',
+        {
+          type: 'doc',
+          id: 'part4-advanced-topics/chap13',
+        },
+        {
+          type: 'doc',
+          id: 'part4-advanced-topics/chap14',
+        },
+        {
+          type: 'doc',
+          id: 'part4-advanced-topics/chap15',
+        },
+        {
+          type: 'doc',
+          id: 'part4-advanced-topics/chap16',
+        },
       ],
     },
   ],
