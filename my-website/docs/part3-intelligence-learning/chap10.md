@@ -1,5 +1,5 @@
 ---
-title: Chapter 10: Robot Learning and Reinforcement Learning
+title: "Chapter 10: Robot Learning and Reinforcement Learning"
 ---
 
 # Chapter 10: Robot Learning and Reinforcement Learning

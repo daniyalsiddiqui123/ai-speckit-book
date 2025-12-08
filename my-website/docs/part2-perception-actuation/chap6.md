@@ -1,5 +1,5 @@
 ---
-title: Chapter 6: Computer Vision for Robotics
+title: "Chapter 6: Computer Vision for Robotics"
 ---
 
 # Chapter 6: Computer Vision for Robotics

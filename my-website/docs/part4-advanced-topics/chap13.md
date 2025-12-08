@@ -1,5 +1,5 @@
 ---
-title: Chapter 13: Humanoid Robotics
+title: "Chapter 13: Humanoid Robotics"
 ---
 
 # Chapter 13: Humanoid Robotics

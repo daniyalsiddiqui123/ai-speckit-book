@@ -1,5 +1,5 @@
 ---
-title: Chapter 16: Future Trends and Research Directions
+title: "Chapter 16: Future Trends and Research Directions"
 ---
 
 # Chapter 16: Future Trends and Research Directions

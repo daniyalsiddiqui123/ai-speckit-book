@@ -1,5 +1,5 @@
 ---
-title: Chapter 5: Robot Sensors
+title: "Chapter 5: Robot Sensors"
 ---
 
 # Chapter 5: Robot Sensors

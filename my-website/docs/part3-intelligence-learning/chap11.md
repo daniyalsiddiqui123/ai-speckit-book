@@ -1,5 +1,5 @@
 ---
-title: Chapter 11: Human-Robot Interaction
+title: "Chapter 11: Human-Robot Interaction"
 ---
 
 # Chapter 11: Human-Robot Interaction

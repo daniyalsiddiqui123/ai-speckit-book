@@ -1,5 +1,5 @@
 ---
-title: Chapter 2: Robot Kinematics
+title: "Chapter 2: Robot Kinematics"
 ---
 
 # Chapter 2: Robot Kinematics

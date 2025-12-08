@@ -1,5 +1,5 @@
 ---
-title: Chapter 8: Robot Locomotion
+title: "Chapter 8: Robot Locomotion"
 ---
 
 # Chapter 8: Robot Locomotion

@@ -1,5 +1,5 @@
 ---
-title: Chapter 14: AI in Robotics: Advanced Topics
+title: "Chapter 14: AI in Robotics: Advanced Topics"
 ---
 
 # Chapter 14: AI in Robotics: Advanced Topics

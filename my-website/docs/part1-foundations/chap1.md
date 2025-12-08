@@ -1,5 +1,5 @@
 ---
-title: Chapter 1: Introduction to Robotics
+title: "Chapter 1: Introduction to Robotics"
 ---
 
 # Chapter 1: Introduction to Robotics

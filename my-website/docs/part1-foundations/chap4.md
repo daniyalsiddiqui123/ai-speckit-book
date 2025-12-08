@@ -1,5 +1,5 @@
 ---
-title: Chapter 4: Robot Control
+title: "Chapter 4: Robot Control"
 ---
 
 # Chapter 4: Robot Control

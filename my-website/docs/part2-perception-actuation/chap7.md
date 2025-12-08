@@ -1,5 +1,5 @@
 ---
-title: Chapter 7: Robot Actuators and Grippers
+title: "Chapter 7: Robot Actuators and Grippers"
 ---
 
 # Chapter 7: Robot Actuators and Grippers

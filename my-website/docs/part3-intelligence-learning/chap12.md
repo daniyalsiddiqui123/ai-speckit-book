@@ -1,5 +1,5 @@
 ---
-title: Chapter 12: Robot Software Architectures
+title: "Chapter 12: Robot Software Architectures"
 ---
 
 # Chapter 12: Robot Software Architectures

@@ -1,5 +1,5 @@
 ---
-title: Chapter 3: Robot Dynamics
+title: "Chapter 3: Robot Dynamics"
 ---
 
 # Chapter 3: Robot Dynamics

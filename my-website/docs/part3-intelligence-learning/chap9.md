@@ -1,5 +1,5 @@
 ---
-title: Chapter 9: Robot Planning and Navigation
+title: "Chapter 9: Robot Planning and Navigation"
 ---
 
 # Chapter 9: Robot Planning and Navigation
