@@ -1,4 +1,7 @@
 {
-  "label": "Part 2: Perception & Actuation",
-  "position": 2
+  "label": "Part 2: Perception and Actuation",
+  "position": 2,
+  "link": {
+    "type": "generated-index"
+  }
 }

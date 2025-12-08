@@ -1,4 +1,7 @@
 {
-  "label": "Part 4: Advanced Topics",
-  "position": 4
+  "label": "Part 4: Advanced Topics in Robotics",
+  "position": 4,
+  "link": {
+    "type": "generated-index"
+  }
 }

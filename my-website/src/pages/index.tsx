@@ -20,8 +20,8 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/intro">
-            Docusaurus Tutorial - 5min ⏱️
+            to="/docs/part1-foundations/chap1">
+            Start the Robotics Course - 🤖
           </Link>
         </div>
       </div>
@@ -34,7 +34,7 @@ export default function Home(): ReactNode {
   return (
     <Layout
       title={`Hello from ${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />">
+      description="A comprehensive guide to teaching physical AI and humanoid robotics, covering foundations, perception, actuation, intelligence, and advanced topics.">
       <HomepageHeader />
       <main>
         <HomepageFeatures />

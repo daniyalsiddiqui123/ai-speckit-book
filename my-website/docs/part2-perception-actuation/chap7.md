@@ -1,26 +1,35 @@
+---
+title: Chapter 7: Robot Actuators and Grippers
+---
 
-## Objectives
+# Chapter 7: Robot Actuators and Grippers
 
-## Theoretical Foundation
-This section introduces the fundamental concepts of robot kinematics, focusing on the mathematical description of robot motion without considering the forces that cause it. We will cover the definitions of forward and inverse kinematics, degrees of freedom, and coordinate frames. The primary goal is to understand how to describe the position and orientation of a robot's end-effector relative to its base.
+This chapter covers the mechanisms that enable robots to move and interact with objects, focusing on various types of actuators and grippers.
 
-## Practical Implementation
+<h2>Key Concepts</h2>
 
-In this section, we will explore the practical application of kinematic principles. Below is an interactive visualization of a simple 2-link planar arm. While this example uses fixed parameters, the underlying mathematical principles can be applied to more complex robotic systems.
+<ul>
+    <li>Electric Motors (DC, AC, Stepper, Servo)</li>
+    <li>Hydraulic and Pneumatic Actuators</li>
+    <li>Gear Trains and Transmissions</li>
+    <li>Types of Grippers (e.g., Two-finger, Multi-finger, Vacuum)</li>
+    <li>Force and Torque Sensing in Grippers</li>
+</ul>
 
-import KinematicsVisual from '@site/src/components/KinematicsVisual';
+<h2>Learning Objectives</h2>
 
-<KinematicsVisual l1={70} l2={60} theta1={45} theta2={75} scale={1} />
+<p>Upon completion of this chapter, you will be able to:</p>
 
-## Case Study
-Consider the design of a robotic arm for an industrial pick-and-place operation. The theoretical understanding of kinematics is critical to ensure the arm can reach all necessary points within its workspace (forward kinematics) and to calculate the required joint angles to achieve a specific target position (inverse kinematics). This case study will explore how these concepts are applied in real-world manufacturing.
+<ul>
+    <li>Identify and describe different types of robot actuators.</li>
+    <li>Understand the working principles of various grippers.</li>
+    <li>Analyze the selection criteria for actuators and grippers in robotic applications.</li>
+    <li>Grasp the importance of force/torque sensing in robotic manipulation.</li>
+</ul>
 
-## Exercises
-1.  **Conceptual Question**: Explain the difference between forward and inverse kinematics using a real-world robot example.
-2.  **Calculation Problem**: For a 2-link planar arm with link lengths `l1 = 0.5m`, `l2 = 0.3m`, calculate the end-effector position (x, y) when `theta1 = 45 degrees` and `theta2 = 30 degrees`. Show your work.
+<h2>Further Reading</h2>
 
-## Chapter Summary
-This chapter introduced the foundational concepts of robot kinematics, distinguishing between forward and inverse problems. We explored how to mathematically describe robot motion and presented a visual aid to illustrate a 2-link arm's configuration. The case study highlighted the practical relevance of kinematics in industrial applications.
-
-
-## Further Reading
+<ul>
+    <li><a href="https://example.com/robot-actuator-types">Robot Actuator Types</a></li>
+    <li><a href="https://example.com/robotic-grippers">Robotic Grippers</a></li>
+</ul>
