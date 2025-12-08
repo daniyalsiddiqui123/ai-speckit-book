@@ -1,0 +1,11 @@
+{
+  "default": true,
+  "MD001": false,
+  "MD003": { "style": "atx" },
+  "MD007": { "indent": 2 },
+  "MD013": { "line_length": 120, "tables": false, "code_blocks": false },
+  "MD024": { "allow_different_nesting": true },
+  "MD026": { "punctuation": ".,;:" },
+  "MD033": { "allowed_elements": ["p", "br", "div", "svg", "img", "KinematicsVisual"] },
+  "MD041": false
+}
