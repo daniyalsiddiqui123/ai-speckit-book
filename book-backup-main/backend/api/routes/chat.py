@@ -17,6 +17,10 @@ settings = get_settings()
 
 router = APIRouter()
 
+async def not_found_generator():
+    yield json.dumps({"type": "chunk", "content": "This is not covered in the book."}) + "\n"
+    yield json.dumps({"type": "end", "conversation_id": None}) + "\n"
+
 @router.post("/chat", dependencies=[Depends(RateLimiter(times=5, seconds=10))]) # 5 requests every 10 seconds
 async def chat_endpoint(chat_request: ChatRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     # Determine context based on selected_text
@@ -27,12 +31,8 @@ async def chat_endpoint(chat_request: ChatRequest, current_user: User = Depends(
         # Global RAG retrieval
         context_chunks = rag_service.retrieve_context(chat_request.question)
         if not context_chunks:
-            # Handle case where no context is found for global RAG
-            # This should ideally be caught by the LLM prompt, but a safeguard here
-            yield json.dumps({"type": "chunk", "content": "This is not covered in the book."}) + "\n"
-            yield json.dumps({"type": "end", "conversation_id": None}) + "\n"
-            return
-    
+            return StreamingResponse(not_found_generator(), media_type="text/event-stream")
+
     # Generate response
     response_generator = rag_service.generate_response(chat_request.question, context_chunks)
 
