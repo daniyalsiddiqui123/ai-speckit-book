@@ -6,7 +6,11 @@ from core.config import get_settings
 
 settings = get_settings()
 
-SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+SQLALCHEMY_DATABASE_URL = db_url
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
