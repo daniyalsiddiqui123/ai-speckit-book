@@ -19,6 +19,6 @@ class Message(BaseModel):
 
 class Conversation(BaseModel):
     id: UUID
-    user_id: int
+    user_id: UUID
     title: str
     messages: List[Message] = []
