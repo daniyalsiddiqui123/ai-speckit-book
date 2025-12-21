@@ -37,9 +37,12 @@ async def startup_event():
     is_production = env.lower() in ["production", "prod"]
 
     if not is_production:
+        # For development: drop and recreate tables with CASCADE for PostgreSQL
         with engine.connect() as conn:
             with conn.begin():
-                Base.metadata.drop_all(bind=engine)
+                # Drop tables in reverse order of creation to handle foreign key constraints
+                for table in reversed(Base.metadata.sorted_tables):
+                    conn.execute(text(f'DROP TABLE IF EXISTS "{table.name}" CASCADE'))
                 Base.metadata.create_all(bind=engine)
                 try:
                     conn.execute(
@@ -50,14 +53,26 @@ async def startup_event():
                 except Exception:
                     pass
     else:
+        # For production: only create tables that don't exist, don't drop existing ones
         Base.metadata.create_all(bind=engine)
 
-    redis_instance = redis.from_url(
-        os.getenv("REDIS_URL", "redis://localhost:6379"),
-        encoding="utf-8",
-        decode_responses=True,
-    )
-    await FastAPILimiter.init(redis_instance)
+    # Initialize Redis for rate limiting with error handling
+    redis_url = os.getenv("REDIS_URL")
+    if redis_url:
+        try:
+            redis_instance = redis.from_url(
+                redis_url,
+                encoding="utf-8",
+                decode_responses=True,
+            )
+            await FastAPILimiter.init(redis_instance)
+        except Exception as e:
+            print(f"Redis connection failed: {e}. Rate limiting may not work.")
+            # Continue without Redis - rate limiting will be disabled
+    else:
+        print("REDIS_URL not set. Rate limiting will be disabled.")
+        # Optionally initialize with in-memory store for development
+        # You can implement an in-memory fallback if needed
 
 
 # Routers
