@@ -1,70 +1,65 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-import json
+from typing import List, Optional
+from uuid import UUID
 
-from core.database import get_db
-from core.config import get_settings
-from api.deps import get_current_user
-from schemas.chat import ChatRequest, Message, Citation
-from schemas.user import User
-from services.rag_service import rag_service
-from services.chat_service import chat_service
+from backend.api.deps import get_db
+from backend.schemas import chat as chat_schemas
+from backend.services.chat_service import chat_service
+from backend.services.rag_service import rag_service
+from backend.models import Conversation as DBConversation
 
-from fastapi_limiter.depends import RateLimiter
-
-settings = get_settings()
 
 router = APIRouter()
 
-async def not_found_generator():
-    yield json.dumps({"type": "chunk", "content": "This is not covered in the book."}) + "\n"
-    yield json.dumps({"type": "end", "conversation_id": None}) + "\n"
+@router.post("/chat", response_model=chat_schemas.Conversation)
+async def chat_with_rag(
+    message: chat_schemas.ChatRequest,
+    db: Session = Depends(get_db)
+):
+    try:
+        # Create or retrieve conversation
+        if message.conversation_id:
+            conversation = chat_service.get_conversation(db, message.conversation_id)
+            # Remove user_id check since we're not authenticating users
+            if not conversation:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
+        else:
+            # For anonymous users, create a conversation with no user_id (NULL)
+            conversation = chat_service.create_conversation(db, None, message.question)
 
-@router.post("/chat", dependencies=[Depends(RateLimiter(times=5, seconds=10))]) # 5 requests every 10 seconds
-async def chat_endpoint(chat_request: ChatRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Determine context based on selected_text
-    context_chunks = []
-    if chat_request.selected_text:
-        context_chunks.append({"text": chat_request.selected_text, "source": "selected_text", "heading": None, "chunk_id": None})
-    else:
-        # Global RAG retrieval
-        context_chunks = rag_service.retrieve_context(chat_request.question)
-        if not context_chunks:
-            return StreamingResponse(not_found_generator(), media_type="text/event-stream")
-
-    # Generate response
-    response_generator = rag_service.generate_response(chat_request.question, context_chunks)
-
-    async def event_generator():
-        full_response_content = ""
-        final_citations = []
-        conversation_id = chat_request.conversation_id
-
-        # If it's a new conversation, create one
-        if not conversation_id and current_user:
-            conversation_id = chat_service.create_conversation(db, current_user.id, chat_request.question).id
-            yield json.dumps({"type": "start", "conversation_id": str(conversation_id)}) + "\n"
-        
         # Save user message
-        if current_user and conversation_id:
-            chat_service.create_message(db, conversation_id, "user", chat_request.question)
+        chat_service.create_message(db, UUID(str(conversation.id)), "user", message.question)
 
-        try:
-            for item in response_generator:
-                if item["type"] == "chunk":
-                    full_response_content += item["content"]
-                    yield json.dumps(item) + "\n"
-                elif item["type"] == "citation":
-                    final_citations = item["sources"]
-                    yield json.dumps(item) + "\n"
-        except Exception as e:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-        finally:
-            # Save assistant message
-            if current_user and conversation_id and full_response_content:
-                chat_service.create_message(db, conversation_id, "assistant", full_response_content, final_citations)
-            
-            yield json.dumps({"type": "end", "conversation_id": str(conversation_id)}) + "\n"
+        # Generate embedding for user query
+        query_embedding = await rag_service.generate_embedding(message.question)
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+        # Retrieve relevant documents
+        retrieved_docs = rag_service.retrieve(query_embedding)
+
+        # Generate RAG response
+        ai_response_content = await rag_service.generate_rag_response(message.question, retrieved_docs)
+
+        # Save AI message
+        chat_service.create_message(db, UUID(str(conversation.id)), "assistant", ai_response_content)
+
+        # Fetch all messages for the conversation to return the full history
+        messages = chat_service.get_messages_for_conversation(db, UUID(str(conversation.id)))
+
+        # Create a response object that matches the schema
+        from backend.schemas.chat import Conversation as ConversationSchema
+        response_conversation = ConversationSchema(
+            id=conversation.id,
+            user_id=conversation.user_id,
+            title=conversation.title,
+            messages=messages
+        )
+
+        return response_conversation
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+

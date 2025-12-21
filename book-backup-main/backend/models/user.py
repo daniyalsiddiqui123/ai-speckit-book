@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
 
-from core.database import Base
+from backend.core.database import Base
 
 class User(Base):
     __tablename__ = "users"
@@ -14,4 +14,3 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    conversations = relationship("Conversation", back_populates="owner")

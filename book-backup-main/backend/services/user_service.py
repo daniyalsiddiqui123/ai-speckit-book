@@ -2,9 +2,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 
-from models.user import User
-from schemas.user import UserCreate
-from core.security import get_password_hash
+from backend.models.user import User
+from backend.schemas.user import UserCreate
+from backend.core.security import get_password_hash
 
 class UserService:
     def get_user_by_email(self, db: Session, email: str) -> User | None:

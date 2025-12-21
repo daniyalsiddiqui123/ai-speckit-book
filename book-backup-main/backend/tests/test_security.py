@@ -1,5 +1,5 @@
 import pytest
-from datetime import timedelta
+from datetime import datetime, timedelta
 from jose import jwt
 
 from core.security import (
@@ -24,7 +24,7 @@ def mock_settings(monkeypatch):
     monkeypatch.setattr("core.config.get_settings", lambda: test_settings)
 
 def test_password_hashing():
-    password = "testpassword"
+    password = "testpassword123"  # Use a reasonable length password
     hashed_password = get_password_hash(password)
     assert verify_password(password, hashed_password)
     assert not verify_password("wrongpassword", hashed_password)

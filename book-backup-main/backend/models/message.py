@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from core.database import Base
+from backend.core.database import Base
 
 class Message(Base):
     __tablename__ = "messages"

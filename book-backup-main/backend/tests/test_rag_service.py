@@ -1,5 +1,9 @@
 import pytest
 from unittest.mock import MagicMock, patch
+import asyncio
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from services.rag_service import RAGService
 from core.config import get_settings
@@ -15,62 +19,73 @@ def mock_settings(monkeypatch):
 
 @pytest.fixture
 def rag_service_instance():
-    with patch('qdrant_client.QdrantClient') as MockQdrantClient, \
-         patch('openai.OpenAI') as MockOpenAI:
-        # Configure mocks if needed
-        # MockQdrantClient.return_value = MagicMock()
-        # MockOpenAI.return_value = MagicMock()
+    with patch('services.rag_service.QdrantClient') as MockQdrantClient:
+        # Configure mock QdrantClient
+        mock_client_instance = MagicMock()
+        MockQdrantClient.return_value = mock_client_instance
         service = RAGService()
-        yield service, MockQdrantClient, MockOpenAI
+        yield service, mock_client_instance
 
-def test_get_embedding(rag_service_instance):
-    service, _, MockOpenAI = rag_service_instance
-    mock_embedding_response = MagicMock()
-    mock_embedding_response.data = [MagicMock(embedding=[0.1, 0.2, 0.3])]
-    MockOpenAI.return_value.embeddings.create.return_value = mock_embedding_response
-    
-    embedding = service.get_embedding("test query")
-    assert embedding == [0.1, 0.2, 0.3]
-    MockOpenAI.return_value.embeddings.create.assert_called_once_with(
-        model=service.qwen_embedding_model,
-        input="test query"
+def test_retrieve(rag_service_instance):
+    service, mock_client = rag_service_instance
+
+    # Mock collection info and search results
+    mock_collection_info = MagicMock()
+    mock_collection_info.config.params.vectors_config.size = 1024
+    mock_client.get_collection.return_value = mock_collection_info
+
+    mock_hits = [
+        MagicMock(payload={"text": "chunk 1", "source": "doc1.md"}),
+        MagicMock(payload={"text": "chunk 2", "source": "doc2.md"})
+    ]
+    mock_client.search.return_value = mock_hits
+
+    # Test retrieve method
+    embedding = [0.1] * 1024
+    results = service.retrieve(embedding)
+
+    assert len(results) == 2
+    assert results[0] == "chunk 1"
+    assert results[1] == "chunk 2"
+    mock_client.search.assert_called_once_with(
+        collection_name=service.collection_name,
+        query_vector=embedding,
+        limit=5,
     )
 
-def test_retrieve_context(rag_service_instance):
-    service, MockQdrantClient, _ = rag_service_instance
-    mock_search_result = [
-        MagicMock(payload={"text": "chunk 1", "source": "s1"}),
-        MagicMock(payload={"text": "chunk 2", "source": "s2"})
-    ]
-    MockQdrantClient.return_value.search.return_value = mock_search_result
-    
-    context = service.retrieve_context("test query")
-    assert len(context) == 2
-    assert context[0]["text"] == "chunk 1"
-    MockQdrantClient.return_value.search.assert_called_once() # More specific asserts can be added
+@pytest.mark.asyncio
+async def test_generate_embedding(rag_service_instance):
+    service, _ = rag_service_instance
 
-def test_generate_response(rag_service_instance):
-    service, _, MockOpenAI = rag_service_instance
-    mock_stream_chunk1 = MagicMock()
-    mock_stream_chunk1.choices = [MagicMock(delta=MagicMock(content="Hello"))]
-    mock_stream_chunk2 = MagicMock()
-    mock_stream_chunk2.choices = [MagicMock(delta=MagicMock(content=" World"))]
+    with patch('services.rag_service.httpx.AsyncClient') as MockAsyncClient:
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": [{"embedding": [0.1, 0.2, 0.3]}]}
+        mock_response.raise_for_status.return_value = None
+        mock_client.post.return_value.__aenter__.return_value = mock_response
+        MockAsyncClient.return_value = mock_client
 
-    MockOpenAI.return_value.chat.completions.create.return_value = iter([mock_stream_chunk1, mock_stream_chunk2])
+        embedding = await service.generate_embedding("test query")
 
-    context_chunks = [{"text": "context here", "source": "test_source"}]
-    response_generator = service.generate_response("What is it?", context_chunks)
-    
-    chunks = []
-    citations = []
-    for item in response_generator:
-        if item["type"] == "chunk":
-            chunks.append(item["content"])
-        elif item["type"] == "citation":
-            citations = item["sources"]
-    
-    assert "".join(chunks) == "Hello World"
-    assert len(citations) == 1
-    assert citations[0]["source"] == "test_source"
-    
-    MockOpenAI.return_value.chat.completions.create.assert_called_once() # More specific asserts can be added
+        assert embedding == [0.1, 0.2, 0.3]
+        mock_client.post.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_generate_rag_response(rag_service_instance):
+    service, _ = rag_service_instance
+
+    with patch('services.rag_service.httpx.AsyncClient') as MockAsyncClient:
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "choices": [{"message": {"content": "This is the AI response"}}]
+        }
+        mock_response.raise_for_status.return_value = None
+        mock_client.post.return_value.__aenter__.return_value = mock_response
+        MockAsyncClient.return_value = mock_client
+
+        retrieved_docs = ["This is a relevant document chunk."]
+        response = await service.generate_rag_response("What is it?", retrieved_docs)
+
+        assert response == "This is the AI response"
+        mock_client.post.assert_called_once()

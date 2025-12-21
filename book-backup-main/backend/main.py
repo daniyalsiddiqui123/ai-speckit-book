@@ -1,29 +1,43 @@
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from core.config import get_settings
-from core.database import engine, Base
-# Import all models to ensure they are registered with SQLAlchemy Base
-from models import user, conversation, message
-from api.routes import auth, chat
+import sys
+import os
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+# backend/main.py
+import os
+
+import redis.asyncio as redis
+from backend.api.routes import chat
+from core.config import get_settings
+from core.database import Base, engine
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi_limiter import FastAPILimiter
-import redis.asyncio as redis # Use redis.asyncio for async FastAPI
 
 settings = get_settings()
 
 app = FastAPI()
 
-# Configure CORS
+# ------------------------
+# CORS Configuration
+# ------------------------
+dev_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+prod_origins = [settings.CLIENT_ORIGIN_URL] if settings.CLIENT_ORIGIN_URL else []
+allowed_origins = dev_origins + prod_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.CLIENT_ORIGIN_URL],  # Allows only the frontend origin
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Exception handler for HTTPException
+
+# ------------------------
+# Exception handler
+# ------------------------
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(
@@ -31,19 +45,54 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         content={"message": exc.detail},
     )
 
-# Function to create all tables in the database
+
+# ------------------------
+# Startup: DB + Rate limiter
+# ------------------------
 @app.on_event("startup")
 async def startup_event():
-    Base.metadata.create_all(bind=engine)
-    # Initialize FastAPI-Limiter
-    # For a real project, ensure Redis is properly configured and accessible
-    redis_instance = redis.from_url("redis://localhost:6379", encoding="utf-8", decode_responses=True)
+    # For development: recreate tables to ensure schema is correct
+    # In production, use proper migrations with Alembic
+    import os
+    from sqlalchemy import text
+
+    # Only recreate tables in development mode
+    env = os.getenv("ENVIRONMENT", "")
+    is_production = env.lower() in ["production", "prod"]
+
+    if not is_production:
+        with engine.connect() as conn:
+            # Use autocommit for DDL statements
+            with conn.begin():
+                # Drop all tables
+                Base.metadata.drop_all(bind=engine)
+                # Create all tables with correct schema
+                Base.metadata.create_all(bind=engine)
+                # Explicitly alter the conversations table to allow NULL user_id
+                try:
+                    conn.execute(text("ALTER TABLE conversations ALTER COLUMN user_id DROP NOT NULL;"))
+                except Exception:
+                    # If the column is part of a foreign key constraint, we need to handle it differently
+                    # This may fail if there's an existing foreign key constraint
+                    pass
+    else:
+        # In production, just create tables if they don't exist
+        Base.metadata.create_all(bind=engine)
+
+    redis_instance = redis.from_url(
+        os.getenv("REDIS_URL", "redis://localhost:6379"),
+        encoding="utf-8",
+        decode_responses=True,
+    )
     await FastAPILimiter.init(redis_instance)
 
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-app.include_router(chat.router, prefix="/api", tags=["chat"]) # Prefix can be adjusted
+
+# ------------------------
+# Routers
+# ------------------------
+app.include_router(chat.router, prefix="/api", tags=["chat"])
+
 
 @app.get("/")
 async def read_root():
     return {"message": "FastAPI backend is running!"}
-
