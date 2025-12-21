@@ -94,7 +94,21 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialSelectedText }) => {
 
     try {
       // Remove authentication requirement since backend doesn't require it
-      const response = await fetch('http://localhost:8000/api/chat', { // Replace with your backend URL
+      // Use environment-aware API endpoint
+      const isDev = typeof window !== 'undefined'
+        ? window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        : false;
+
+      let backendUrl = isDev
+        ? 'http://localhost:8000'  // Development
+        : process.env.REACT_APP_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || '';
+
+      // If no backend URL is configured for production, show an error
+      if (!isDev && !backendUrl) {
+        throw new Error('Backend API URL is not configured for production');
+      }
+
+      const response = await fetch(`${backendUrl}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,12 +133,19 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialSelectedText }) => {
       setMessages(conversation.messages);
     } catch (error) {
       console.error('Chatbot API error:', error);
+      let errorMessage = 'Sorry, I am having trouble connecting right now. Please try again later.';
+
+      // Provide more specific error message if it's a configuration issue
+      if (error instanceof Error && error.message === 'Backend API URL is not configured for production') {
+        errorMessage = 'Backend API is not configured. Please contact the site administrator to set up the backend connection.';
+      }
+
       // Remove the user message and add an error message
       setMessages(prev => {
         const messagesWithoutLastUser = prev.filter((_, index) => !(index === prev.length - 1 && prev[index].role === 'user'));
         return [
           ...messagesWithoutLastUser,
-          { role: 'assistant', content: 'Sorry, I am having trouble connecting right now. Please try again later.' },
+          { role: 'assistant', content: errorMessage },
         ];
       });
     } finally {
