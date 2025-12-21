@@ -13,6 +13,8 @@ Set the `NEXT_PUBLIC_API_BASE_URL` environment variable in your Vercel project s
    - Key: `NEXT_PUBLIC_API_BASE_URL`
    - Value: Your backend URL (e.g., `https://your-app-name.up.railway.app` or `https://your-app-name.onrender.com`)
 
+**Note:** Do not commit .env files to the repository for security reasons. Environment variables should be set in the deployment platform.
+
 ## For Other Deployments
 
 Set the `REACT_APP_API_BASE_URL` environment variable during the build process.
