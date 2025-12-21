@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "my-website/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "rootDirectory": "my-website",
+        "distDir": "build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "framework": "docusaurus"
+}

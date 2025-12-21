@@ -15,16 +15,10 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://daniyalsiddiqui123.github.io',
+  url: 'https://ai-speckit-book.vercel.app',
   // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
   trailingSlash: true,
-
-  // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'daniyalsiddiqui123', // Usually your GitHub org/user name.
-  projectName: 'ai-speckit-book', // Usually your repo name.
 
   onBrokenLinks: 'throw',
 
