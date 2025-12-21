@@ -1,7 +1,7 @@
 import os
 
 import redis.asyncio as redis
-from api.routes import chat  # ✅ correct import
+from api.routes import chat  # ✅ FIXED
 from core.config import get_settings
 from core.database import Base, engine
 from fastapi import FastAPI, HTTPException, Request
@@ -10,37 +10,25 @@ from fastapi.responses import JSONResponse
 from fastapi_limiter import FastAPILimiter
 
 settings = get_settings()
-
 app = FastAPI()
 
-# ------------------------
-# CORS Configuration
-# ------------------------
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://ai-speckit-book-mjfm.vercel.app",
-    ],
+    allow_origins=["https://ai-speckit-book-mjfm.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# ------------------------
 # Exception handler
-# ------------------------
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"message": exc.detail},
-    )
+    return JSONResponse(status_code=exc.status_code, content={"message": exc.detail})
 
 
-# ------------------------
-# Startup: DB + Rate limiter
-# ------------------------
+# Startup
 @app.on_event("startup")
 async def startup_event():
     from sqlalchemy import text
@@ -72,9 +60,7 @@ async def startup_event():
     await FastAPILimiter.init(redis_instance)
 
 
-# ------------------------
 # Routers
-# ------------------------
 app.include_router(chat.router, prefix="/api", tags=["chat"])
 
 
@@ -83,14 +69,8 @@ async def read_root():
     return {"message": "FastAPI backend is running!"}
 
 
-# ------------------------
-# Entrypoint (Railway-safe)
-# ------------------------
+# Entrypoint
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=int(os.environ.get("PORT", 8000)),
-    )
+    uvicorn.run("main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
