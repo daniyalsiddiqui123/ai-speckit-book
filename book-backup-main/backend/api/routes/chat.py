@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
 
-from backend.api.deps import get_db
-from backend.schemas import chat as chat_schemas
-from backend.services.chat_service import chat_service
-from backend.services.rag_service import rag_service
-from backend.models import Conversation as DBConversation
+from api.deps import get_db
+from schemas import chat as chat_schemas
+from services.chat_service import chat_service
+from services.rag_service import rag_service
+from models import Conversation as DBConversation
 
 
 router = APIRouter()
@@ -47,7 +47,7 @@ async def chat_with_rag(
         messages = chat_service.get_messages_for_conversation(db, UUID(str(conversation.id)))
 
         # Create a response object that matches the schema
-        from backend.schemas.chat import Conversation as ConversationSchema
+        from schemas.chat import Conversation as ConversationSchema
         response_conversation = ConversationSchema(
             id=conversation.id,
             user_id=conversation.user_id,

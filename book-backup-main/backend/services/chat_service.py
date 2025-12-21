@@ -3,9 +3,9 @@ from typing import List, Optional
 from uuid import UUID
 import json
 
-from backend.models.conversation import Conversation
-from backend.models.message import Message
-from backend.schemas.chat import Message as MessageSchema, Citation, Conversation as ChatSchemaConversation
+from models.conversation import Conversation
+from models.message import Message
+from schemas.chat import Message as MessageSchema, Citation, Conversation as ChatSchemaConversation
 
 class ChatService:
     def create_conversation(self, db: Session, user_id, initial_question: str) -> Conversation:
