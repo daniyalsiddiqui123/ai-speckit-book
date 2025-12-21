@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -7,13 +7,14 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 import os
 
 import redis.asyncio as redis
-from backend.api.routes import chat
 from core.config import get_settings
 from core.database import Base, engine
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi_limiter import FastAPILimiter
+
+from backend.api.routes import chat
 
 settings = get_settings()
 
@@ -22,13 +23,12 @@ app = FastAPI()
 # ------------------------
 # CORS Configuration
 # ------------------------
-dev_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
-prod_origins = [settings.CLIENT_ORIGIN_URL] if settings.CLIENT_ORIGIN_URL else []
-allowed_origins = dev_origins + prod_origins
+# Allow only the production Vercel domain
+prod_origin = "https://ai-speckit-book-mjfm.vercel.app/"
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=["https://ai-speckit-book-mjfm.vercel.app/"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -54,6 +54,7 @@ async def startup_event():
     # For development: recreate tables to ensure schema is correct
     # In production, use proper migrations with Alembic
     import os
+
     from sqlalchemy import text
 
     # Only recreate tables in development mode
@@ -70,7 +71,11 @@ async def startup_event():
                 Base.metadata.create_all(bind=engine)
                 # Explicitly alter the conversations table to allow NULL user_id
                 try:
-                    conn.execute(text("ALTER TABLE conversations ALTER COLUMN user_id DROP NOT NULL;"))
+                    conn.execute(
+                        text(
+                            "ALTER TABLE conversations ALTER COLUMN user_id DROP NOT NULL;"
+                        )
+                    )
                 except Exception:
                     # If the column is part of a foreign key constraint, we need to handle it differently
                     # This may fail if there's an existing foreign key constraint
@@ -100,6 +105,7 @@ async def read_root():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
