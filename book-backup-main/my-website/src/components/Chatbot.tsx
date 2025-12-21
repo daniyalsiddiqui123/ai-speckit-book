@@ -104,7 +104,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialSelectedText }) => {
         : window.ENV?.REACT_APP_API_BASE_URL ||
           window.ENV?.NEXT_PUBLIC_API_BASE_URL ||
           (typeof process !== 'undefined' ? (process.env?.REACT_APP_API_BASE_URL || process.env?.NEXT_PUBLIC_API_BASE_URL) : null) ||
-          'https://ai-speckit-book-production.up.railway.app'; // Railway backend URL
+          'https://web-production-f3886.up.railway.app'; // Railway backend URL
 
       // If no backend URL is configured for production, show an error
       if (!isDev && !backendUrl) {
