@@ -1,7 +1,7 @@
 import os
 
 import redis.asyncio as redis
-from api.routes import chat  # ✅ FIXED IMPORT
+from api.routes import chat  # ✅ correct import
 from core.config import get_settings
 from core.database import Base, engine
 from fastapi import FastAPI, HTTPException, Request
