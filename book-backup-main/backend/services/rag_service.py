@@ -74,47 +74,16 @@ class RAGService:
 
         from qdrant_client.http.models import Distance, VectorParams
 
-        # Check the collection's actual vector size
+        # Try to access the collection, create if it doesn't exist
         collection_exists = True
-        has_correct_dimension = False
 
         try:
             collection_info = self.client.get_collection(self.collection_name)
-            # Check if the vector dimension matches - using same approach as vector_size property
-            actual_vector_size = None
-            if hasattr(collection_info.config, "params"):
-                params = collection_info.config.params
-                # Check for different possible attribute names
-                if hasattr(params, "vectors_config"):
-                    actual_vector_size = params.vectors_config.size
-                elif hasattr(params, "vector_size"):
-                    actual_vector_size = params.vector_size
-                elif hasattr(params, "size"):
-                    actual_vector_size = params.size
-                else:
-                    # Try to access as dictionary if it's a mapping type
-                    try:
-                        if hasattr(params, '__getitem__'):
-                            if 'vectors_config' in params and hasattr(params['vectors_config'], 'size'):
-                                actual_vector_size = params['vectors_config'].size
-                            elif 'vector_size' in params:
-                                actual_vector_size = params['vector_size']
-                    except (TypeError, AttributeError):
-                        pass
-            else:
-                # If we can't determine the actual size, skip the dimension check
-                actual_vector_size = len(embedding)  # Assume it matches to continue
-
-            if actual_vector_size and len(embedding) == actual_vector_size:
-                has_correct_dimension = True
-            else:
-                # Vector dimension mismatch - we'll handle this by recreating the collection
-                self.client.delete_collection(self.collection_name)
-                collection_exists = False
+            print(f"Collection '{self.collection_name}' exists with {collection_info.points_count} points")
         except Exception as e:
             # Collection doesn't exist - we'll create it
             collection_exists = False
-            print(f"Collection does not exist: {e}")
+            print(f"Collection does not exist, will create: {e}")
 
         # Create collection if it doesn't exist with correct dimensions
         if not collection_exists:
@@ -137,10 +106,18 @@ class RAGService:
         time.sleep(0.1)
 
         try:
+            # ADD LOGGING to verify vectors exist
+            try:
+                collection_info = self.client.get_collection(self.collection_name)
+                print(f"Collection '{self.collection_name}' exists with {collection_info.points_count} points")
+            except Exception as e:
+                print(f"Error getting collection info: {e}")
+
+            # INCREASE top_k to at least 8
             hits = self.client.search(
                 collection_name=self.collection_name,
                 query_vector=embedding,
-                limit=5,
+                limit=8,  # Increased from 5 to 8
             )
 
             # Extract text, source, and heading from payloads
@@ -151,7 +128,19 @@ class RAGService:
                     # Later we can extend to return structured objects with source info
                     results.append(h.payload["text"])
 
+            # ADD LOGGING as requested
+            print("QUERY:", embedding[:10])  # First 10 elements of embedding vector
+            print("DOC COUNT:", len(results))
+            for i, result in enumerate(results[:2]):
+                print(result[:200] + "..." if len(result) > 200 else result)
+
+            # ADD LOGGING
+            print(f"Retrieval query vector length: {len(embedding)}")
             print(f"Retrieved {len(results)} documents from collection")
+            for i, result in enumerate(results[:3]):  # Preview first 3 chunks
+                preview = result[:100] + "..." if len(result) > 100 else result
+                print(f"Chunk {i+1} preview: {preview}")
+
             return results
         except Exception as e:
             print(f"Error during search: {e}")
@@ -176,20 +165,83 @@ class RAGService:
             )
             response.raise_for_status()
             data = response.json()
-            return data["data"][0]["embedding"]
+            embedding = data["data"][0]["embedding"]
+            print(f"Generated embedding with length: {len(embedding)} for model: {settings.EMBEDDING_MODEL}")
+            return embedding
 
     async def generate_rag_response(
-        self, user_query: str, retrieved_docs: list[str]
+        self, user_query: str, retrieved_docs: list[str]  # Note: retrieved_docs from original call is ignored now
     ) -> str:
-        context = "\n\n".join(retrieved_docs)
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a helpful assistant. Use the website and the book's content to answer the user's question. If you don't know the answer, just say that you don't know, don't try to make up an answer.\n\n"
-                + context,
-            },
-            {"role": "user", "content": user_query},
+        # ENFORCE RETRIEVAL FOR EVERY QUERY, even vague ones
+        # Expand vague queries internally for better retrieval
+        expanded_query = user_query
+
+        # List of vague queries that need expansion
+        vague_indicators = [
+            "tell me about", "what does this", "this chapter", "this module",
+            "this topic", "this section", "this concept", "this idea",
+            "this book", "the book", "book", "this", "that", "it", "they"
         ]
+
+        is_vague_query = any(indicator in user_query.lower() for indicator in vague_indicators)
+
+        if is_vague_query:
+            expanded_query = user_query + " book content chapter explanation"
+
+        # For "Explain:" queries, use the text after the prefix for direct retrieval
+        if user_query.strip().lower().startswith("explain:"):
+            explain_text = user_query.strip()[8:].strip()  # Strip "Explain:" prefix
+            print(f"Explain query detected. Original: '{user_query}', Extracted text: '{explain_text}'")
+
+            if explain_text:
+                # Use highlighted text directly as retrieval query - DO NOT bypass retriever
+                explain_embedding = await self.generate_embedding(explain_text)
+                explain_docs = self.retrieve(explain_embedding)  # DO NOT rewrite the query
+                retrieved_chunks = explain_docs
+            else:
+                # Even for empty explain, ensure retrieval happens with original query
+                expanded_embedding = await self.generate_embedding(expanded_query)
+                expanded_docs = self.retrieve(expanded_embedding)
+                retrieved_chunks = expanded_docs
+        else:
+            # Always run retrieval with expanded query
+            expanded_embedding = await self.generate_embedding(expanded_query)
+            expanded_docs = self.retrieve(expanded_embedding)
+            retrieved_chunks = expanded_docs
+
+        # ADD LOGGING
+        print(f"Original query: '{user_query}'")
+        print(f"Expanded query: '{expanded_query}'")
+        print(f"Number of retrieved chunks: {len(retrieved_chunks)}")
+
+        # ONLY return "not covered in the book" IF retrieved_chunks.length == 0
+        if len(retrieved_chunks) == 0:
+            print("No chunks retrieved - returning fallback message")
+            # Return the exact fallback message
+            fallback_response = "This information is not covered in the book."
+            return fallback_response
+        else:
+            print("Chunks retrieved - proceeding with LLM response")
+            # If chunks exist, the LLM MUST answer using them
+            context = "\n\n".join(retrieved_chunks)
+
+            # Create the strict system prompt that enforces ALL rules
+            system_prompt = (
+                "You are a RAG assistant for the \"Documentation Book\". "
+                "You ONLY answer using the provided book content. "
+                "EVERY user query refers to this book - DO NOT ask which book. "
+                "DO NOT answer from general knowledge. "
+                "Answer the user's query using ONLY the provided book content below.\n\n"
+                + context
+            )
+
+            messages = [
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {"role": "user", "content": user_query},
+            ]
 
         async with httpx.AsyncClient() as client:
             response = await client.post(

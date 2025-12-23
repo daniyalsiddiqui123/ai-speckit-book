@@ -1,18 +1,25 @@
 import os
+import sys
 import glob
 import httpx
 from pathlib import Path
 import re
+
+# Add the parent directory to the path so we can import core.config
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from qdrant_client import QdrantClient, models
 from markdown_it import MarkdownIt
 from typing import Optional
+from core.config import get_settings
 
-# Load settings from environment variables
-QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
-QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "dev-qdrant-key")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "dev-openrouter-key")
+# Load settings from the shared config
+settings = get_settings()
+QDRANT_URL = settings.QDRANT_URL
+QDRANT_API_KEY = settings.QDRANT_API_KEY
+OPENROUTER_API_KEY = settings.OPENROUTER_API_KEY
 COLLECTION_NAME = "docusaurus_book"
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "qwen/qwen3-embedding-8b")  # Use same model as in config
+EMBEDDING_MODEL = settings.EMBEDDING_MODEL  # Use same model as in config
 
 # Determine vector size based on the model
 if "text-embedding-3-large" in EMBEDDING_MODEL:
@@ -173,36 +180,38 @@ def ingest_documents(docs_path: str = "../my-website/docs"):
         print(f"Could not recreate collection, might already exist: {e}")
 
     points = []
+    point_id_counter = 0  # Keep track of IDs across batches
     for file_path in markdown_files:
         print(f"Processing file: {file_path}")
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        
+
         chunks = chunk_text(content)
         for i, chunk in enumerate(chunks):
-            print(f"  Chunk {i+1}: {chunk[:100]}...") # Print first 100 chars of chunk
+            print(f"  Processing chunk {i+1} of file {os.path.basename(file_path)}...") # Simple progress indicator
             embedding = get_embedding(chunk)
-            
+
             # Get nearest heading for metadata
             # Approximate start_pos for simplicity, more accurate parsing needed for production
-            start_pos = content.find(chunk) 
+            start_pos = content.find(chunk)
             heading = get_nearest_heading(content, start_pos)
-            
+
             payload = {
                 "text": chunk,
                 "source": os.path.relpath(file_path, docs_path), # Relative path for citation
                 "heading": heading,
                 "chunk_id": i
             }
-            
+
             points.append(
                 models.PointStruct(
-                    id=f"{os.path.basename(file_path)}-{i}", # Unique ID for each chunk
+                    id=point_id_counter, # Use sequential integer ID
                     vector=embedding,
                     payload=payload
                 )
             )
-            
+            point_id_counter += 1
+
             if len(points) >= 100: # Batch upload for efficiency
                 qdrant_client.upsert(
                     collection_name=COLLECTION_NAME,

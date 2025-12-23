@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     QDRANT_URL: str = "http://localhost:6333"
     QDRANT_API_KEY: str = "dev-qdrant-key"
     CLIENT_ORIGIN_URL: str = "http://localhost:3000"
-    EMBEDDING_MODEL: str = "openai/text-embedding-3-small"  # Use a known 1536-dim model for consistency
+    EMBEDDING_MODEL: str = "qwen/qwen3-embedding-8b"  # Must match the ingestion script
     CHAT_MODEL: str = "google/gemini-flash-1.5"
 
 

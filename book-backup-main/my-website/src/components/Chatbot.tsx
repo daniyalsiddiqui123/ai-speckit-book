@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ExplainPopup from './ExplainPopup';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -17,6 +18,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialSelectedText }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [selectedText, setSelectedText] = useState<string>('');
+  const [showExplainPopup, setShowExplainPopup] = useState(false);
+  const [popupPosition, setPopupPosition] = useState<{ top: number; left: number } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -38,7 +41,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialSelectedText }) => {
     if (initialSelectedText) {
       setIsOpen(true);
       setSelectedText(initialSelectedText);
-      setInput(initialSelectedText); // Pre-fill input with selected text
+      setInput(`Explain: ${initialSelectedText}`); // Pre-fill input with "Explain: [selected text]"
     }
   }, [initialSelectedText]);
 
@@ -49,28 +52,30 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialSelectedText }) => {
   // Add text selection functionality
   useEffect(() => {
     const handleTextSelection = () => {
-      const selectedText = window.getSelection()?.toString().trim();
-      if (selectedText) {
+      const selection = window.getSelection();
+      const selectedText = selection?.toString().trim();
+
+      if (selectedText && selection?.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+
+        // Position the popup above the selected text
+        setPopupPosition({
+          top: rect.top + window.scrollY - 40, // 40px above the selection
+          left: rect.left + window.scrollX + (rect.width / 2) - 30 // Centered horizontally
+        });
+
         setSelectedText(selectedText);
+        setShowExplainPopup(true);
+      } else {
+        setShowExplainPopup(false);
       }
     };
 
-    const handleClick = () => {
-      // Clear selected text when clicking elsewhere
-      setTimeout(() => {
-        const currentSelection = window.getSelection()?.toString().trim();
-        if (!currentSelection) {
-          setSelectedText('');
-        }
-      }, 100);
-    };
-
     document.addEventListener('mouseup', handleTextSelection);
-    document.addEventListener('click', handleClick);
 
     return () => {
       document.removeEventListener('mouseup', handleTextSelection);
-      document.removeEventListener('click', handleClick);
     };
   }, []);
 
@@ -153,6 +158,31 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialSelectedText }) => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const onSelectExplain = (text: string) => {
+    if (text) {
+      // Pre-fill the input with "Explain: [selected text]"
+      setInput(`Explain: ${text}`);
+      setSelectedText(text); // Preserve the selected text
+      setShowExplainPopup(false); // Hide the popup immediately when Explain is clicked
+      setIsOpen(true); // Open the chat window immediately
+
+      // Use a shorter, more reliable delay to send the message
+      setTimeout(() => {
+        // Ensure the input state is updated before sending
+        const currentInput = `Explain: ${text}`;
+        if (currentInput.trim() !== '') {
+          // Update input again to ensure state is correct
+          setInput(currentInput);
+          // Then send the message
+          sendMessage();
+        }
+      }, 150); // Shorter delay for more reliable execution
+    } else {
+      // Clear the popup when text is empty
+      setShowExplainPopup(false);
     }
   };
 
@@ -301,43 +331,13 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialSelectedText }) => {
     <>
       <style>{responsiveStyles}</style>
 
-      {/* Floating button that appears when text is selected */}
-      {selectedText && (
-        <button
-          onClick={askAboutSelection}
-          className="selection-button"
-          style={{
-            position: 'fixed',
-            top: isMobile ? '10px' : '20px',
-            right: isMobile ? '10px' : '20px',
-            zIndex: 1001,
-            backgroundColor: '#10b981',
-            color: 'white',
-            borderRadius: '24px',
-            width: isMobile ? '36px' : '48px',
-            height: isMobile ? '36px' : '48px',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: isMobile ? '16px' : '18px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.05)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-          }}
-          title="Ask about selected text"
-        >
-          💬
-        </button>
-      )}
+      {/* Explain Popup that appears when text is selected */}
+      <ExplainPopup
+        selectedText={selectedText}
+        onSelectExplain={onSelectExplain}
+        isOpen={showExplainPopup}
+        position={popupPosition}
+      />
 
       <button
         onClick={toggleChat}
